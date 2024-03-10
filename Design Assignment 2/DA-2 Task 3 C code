@@ -1,0 +1,31 @@
+#define F_CPU 16000000UL // 8 Mhz clock
+#include <avr/io.h> // standard library
+#include <avr/interrupt.h> // interrupt library
+#include <util/delay.h> // delay library
+
+// short delay subroutine
+void ShortDelay() {
+	_delay_ms(333); // delay of 0.333 seconds
+}
+
+ISR(INT1_vect) {
+	cli();
+	PORTB &= ~(1 << PINB4); // turns on LED2
+	for (int i=0; i<5; i++) {
+		ShortDelay(); // delay cycle to achieve 3 seconds while accounting for interrupt activation delay
+	}
+	sei(); // enable global interrupt
+}
+
+int main(void)
+{
+    DDRB = 0xff; // set PB4 as output
+	PORTD |= (1 << PIND3); // enables pull-ups for PD3
+	EICRA |= (1 << ISC10); // using falling edge to generate interrupt
+	EIMSK |= (1 << INT1); // only using INT1
+	sei(); // global interrupt
+    while (1) {
+		PORTB = ~(0x00);
+    }
+	return 0;
+}
