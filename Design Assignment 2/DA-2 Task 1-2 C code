@@ -1,0 +1,29 @@
+#define F_CPU 16000000UL // 8 Mhz clock
+#include <avr/io.h> // main libraries
+#include <avr/interrupt.h> // interrupt libraries
+#include <util/delay.h> // delay libraries 
+
+// short delay subroutine
+void ShortDelay() {
+	_delay_ms(333); // delay of 0.333 seconds
+}
+
+int main(void)
+{
+    DDRB |= (1 << PINB5); // set Port B5 as output
+	DDRC &= (0 << PINC2); // set Port C as input
+	PORTC |= (1 << PINC2); // enables pull-ups for SW2 (pushbutton)
+    
+    while (1) {
+		if (!(PINC & (1 << PINC2))) {
+			PORTB &= ~(1 << PINB5); // turn on PB5
+			for (int i=0; i<6; i++) {
+				ShortDelay(); // loop will run 6 times, results in 2 second delay
+			}
+		}
+		else {
+			PORTB |= (1 << PINB5);
+		}
+    }
+	return 0;
+}
