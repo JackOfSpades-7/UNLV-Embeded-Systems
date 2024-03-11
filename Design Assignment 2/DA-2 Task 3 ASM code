@@ -1,0 +1,37 @@
+.cseg
+.org 0x0000 ; Reset vector
+    rjmp main ; Jump to main program
+
+    cli ; Disable global interrupts
+    sbi PORTB, PINB4 ; Turn on LED2 (set PB4 high)
+    ldi r16, 5 ; Initialize loop counter to 5
+ShortDelayLoop:
+    call ShortDelay ; Call the ShortDelay subroutine
+    dec r16 ; Decrement loop counter
+    brne ShortDelayLoop ; Repeat until loop counter is not zero
+    sei ; Enable global interrupts
+    reti ; Return from interrupt
+
+main:
+    ldi r16, 0xFF ; Set DDRB to output (all pins)
+    out DDRB, r16
+    ldi r16, (1 << PIND3) ; Enable pull-up on PD3
+    out PORTD, r16
+    ldi r16, (1 << ISC11)
+	ori r16, (1 << ISC10) ; Set both ISC11 and ISC10
+    sts EICRA, r16
+    ldi r16, (1 << INT1) ; Enable INT1
+    out EIMSK, r16
+    sei ; Enable global interrupts
+
+mainLoop:
+    ldi r16, 0x00 ; Set PORTB to all zeros
+    out PORTB, r16
+    rjmp mainLoop ; Infinite loop
+
+ShortDelay:
+    ldi r17, 111 ; Load delay count (approximately 333 ms)
+DelayLoop:
+    dec r17 ; Decrement delay count
+    brne DelayLoop ; Repeat until delay count is zero
+    ret ; Return from subroutine
