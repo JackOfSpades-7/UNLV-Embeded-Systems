@@ -1,0 +1,50 @@
+.org 0x00
+
+; defining constants
+.equ F_CPU = 16000000
+.equ DELAY_MS = 333
+
+; short delay subroutine
+ShortDelay:
+    ldi r18, DELAY_MS/4
+    ldi r19, DELAY_MS/4
+    ldi r20, DELAY_MS/4
+DelayLoop:
+    dec r20
+    brne DelayLoop
+    dec r19
+    brne DelayLoop
+    dec r18
+    brne DelayLoop
+    ret
+
+; label for main - for commenting purposes
+main:
+    ; set Port B5 as output
+    sbi DDRB, 5
+
+    ; set Port C2 as input and enable pull-up
+    cbi DDRC, 2
+    sbi PORTC, 2
+
+Loop:
+    ; check if PINC2 is low (button pressed)
+    sbic PINC, 2
+    rjmp ButtonReleased
+
+    ; turn on PB5
+    sbi PORTB, 5
+
+    ; running ShortDelay (6 times for a 2-second delay)
+    ldi r22, 6
+DelayLoopMain:
+    call ShortDelay
+    dec r22
+    brne DelayLoopMain
+
+    ; button released, turn off PB5
+ButtonReleased:
+    cbi PORTB, 5
+
+    ; infinite loop to keep checking for button press
+    rjmp Loop
