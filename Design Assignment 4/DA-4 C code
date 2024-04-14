@@ -8,17 +8,10 @@
 #include <math.h>
 #include <avr/interrupt.h>
 
-int adcResult; //global integer for the adc result
+int adcResult; // global integer for the adc result
 
-void USART_Transmit(unsigned char data);
 void transmit_str(const char *str);
-unsigned char USART_Receive(void);
 void USART_Init(unsigned int ubrr);
-void usart_init ();
-void adc_init();
-void timer_init();
-
-void usart_send (unsigned char ch);
 void usart_print(char* str);
 void USART_putstring(char* StringPtr);
 char out_str[51];
@@ -27,19 +20,16 @@ int main (void)
 {
 	memset(out_str, ' ', 49);
 	out_str[50] = '\0';
-	timer_init ();
-	usart_init ();
-	adc_init ();
 	ADC_Init(); // Initialize ADC
-	DDRB = 0xFF; //Portb as outputs
-	sei(); //Enable Global interrupts
+	DDRB = 0xFF; // Portb as outputs
+	sei(); // Enable Global interrupts
 	
 	USART_Init(MYUBRR); //Initializing USART
 
 	while (1) {
-		ADCSRA |= (1<<6); //start conversion
-		transmit_str("* \n"); //Print star to the serial terminal
-		_delay_ms(100); //Delay 0.1s before printing again
+		ADCSRA |= (1<<6); // start conversion
+		transmit_str("* \n"); // Print star to the serial terminal
+		_delay_ms(100); // Delay 0.1s before printing again
 	}
 
 	return 0;
@@ -69,17 +59,17 @@ void ADC_Init() {
 ISR(ADC_vect) //ADC conversion complete interrupt
 {
 	adcResult = ADCH; // outputting to 8 LEDS so only taking top 8 bits
-	PORTB = adcResult; //outputting ADC result to LEDs
+	PORTB = adcResult; // outputting ADC result to LEDs
 }
 
 void USART_Init(unsigned int ubrr)
 {
-	/*Set baud rate */
+	// Set baud rate
 	UBRR0H = (unsigned char)(ubrr>>8);
 	UBRR0L = (unsigned char)ubrr;
-	/*Enable receiver and transmitter */
+	// Enable receiver and transmitter
 	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
-	/* Set frame format: 8data, 1stop bit */
+	// Set frame format: 8data, 1stop bit
 	UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
 }
 
@@ -89,17 +79,9 @@ void transmit_str(const char *str)
 
 	while(*str) // writes each character of string until the string ends
 	{
-		while (!(UCSR0A & (1<<UDRE0))); //wait for transmit buffer
-		UDR0 = *str; //current character transferred to data register
-		++str; //Increment character pointer
+		while (!(UCSR0A & (1<<UDRE0))); // wait for transmit buffer
+		UDR0 = *str; // current character transferred to data register
+		++str; // Increment character pointer
 	}
 
-}
-
-unsigned char USART_Receive(void)
-{
-	/* Wait for data to be received */
-	while (!(UCSR0A & (1<<RXC0)));
-	/* Get and return received data from buffer */
-	return UDR0;
 }
