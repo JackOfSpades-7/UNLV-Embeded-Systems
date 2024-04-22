@@ -1,0 +1,152 @@
+// Initializing clock, constants, libraries, variables, etc. 
+#define F_CPU 16000000UL	 
+#define MAX 535
+#define MIN 115
+#define STEPS (MAX-MIN)/105
+#include <avr/io.h>			 
+#include <util/delay.h>		 
+
+// Defines Trig and Echo pins of the Ultrasonic Sensor
+#define trigPin 10
+#define echoPin 11
+
+// Define constants
+#define WIDTH 1200
+#define HEIGHT 680
+#define PI 3.14159265358979323846
+
+// Global Variable
+int delayTime = 125;
+
+// Function prototypes
+void drawRadar();
+void drawObject(int angle, int distance);
+void drawLine(int angle);
+void drawText(int angle, int distance, char* noObject);
+
+int main()
+{
+  // Servo motor //
+	// Configuring TIMER1: non-inv, prescale 64, fast PWM
+	TCCR1A|=(1<<COM1A1)|(1<<COM1B1)|(1<<WGM11);        
+	TCCR1B|=(1<<WGM13)|(1<<WGM12)|(1<<CS11)|(1<<CS10); 
+
+	ICR1=4999;  // set period to 20ms
+
+	DDRB|=(1<<PINB1);   // setting out pin
+
+	while(1)
+	{
+		for(int i = MIN; i <= MAX; i += STEPS) {
+			OCR1A = i;
+			_delay_ms(150);
+		}
+		for(int i = MAX; i >= MIN; i -= STEPS) {
+			OCR1A = i;
+			_delay_ms(150);
+		}
+	}
+
+  // Ultrasonic sensor //
+  // Initialize variables
+	char angle[4] = "";
+	char distance[4] = "";
+	char data[10] = "";
+	char noObject[8] = "";
+	int iAngle, iDistance;
+	int index1 = 0;
+
+	// Simulate serial input
+	strcpy(data, "30,15.");
+	index1 = strchr(data, ',') - data;
+	strncpy(angle, data, index1);
+	strcpy(distance, data + index1 + 1);
+	iAngle = atoi(angle);
+	iDistance = atoi(distance);
+
+	// Check if object is detected
+	if (iDistance > 40) {
+		strcpy(noObject, "Nothing");
+		} else {
+		strcpy(noObject, "Detect");
+	}
+
+	// Call drawing functions
+	drawRadar();
+	drawObject(iAngle, iDistance);
+	drawLine(iAngle);
+	drawText(iAngle, iDistance, noObject);
+
+	return 0;
+}
+
+void drawRadar() {
+	int i;
+	float radius1 = (WIDTH - WIDTH * 0.0625) / 2.0;
+	float radius2 = (WIDTH - WIDTH * 0.27) / 2.0;
+	float radius3 = (WIDTH - WIDTH * 0.479) / 2.0;
+	float radius4 = (WIDTH - WIDTH * 0.687) / 2.0;
+	float x, y;
+
+	printf("Drawing radar...\n");
+
+	// Draw arc lines
+	for (i = 0; i <= 180; i++) {
+		x = WIDTH / 2 + radius1 * cos(i * PI / 180);
+		y = HEIGHT - HEIGHT * 0.074 - radius1 * sin(i * PI / 180);
+		printf("Drawing point at (%.2f, %.2f)\n", x, y);
+	}
+
+	for (i = 0; i <= 180; i++) {
+		x = WIDTH / 2 + radius2 * cos(i * PI / 180);
+		y = HEIGHT - HEIGHT * 0.074 - radius2 * sin(i * PI / 180);
+		printf("Drawing point at (%.2f, %.2f)\n", x, y);
+	}
+
+	// ... (code for drawing other arc lines)
+}
+
+void drawObject(int angle, int distance) {
+	float pixsDistance = distance * ((HEIGHT - HEIGHT * 0.1666) * 0.025);
+	float x1, y1, x2, y2;
+
+	printf("Drawing object...\n");
+
+	if (distance < 40) {
+		x1 = WIDTH / 2 + pixsDistance * cos(angle * PI / 180);
+		y1 = HEIGHT - HEIGHT * 0.074 - pixsDistance * sin(angle * PI / 180);
+		x2 = WIDTH / 2 + (WIDTH - WIDTH * 0.505) * cos(angle * PI / 180);
+		y2 = HEIGHT - HEIGHT * 0.074 - (WIDTH - WIDTH * 0.505) * sin(angle * PI / 180);
+		printf("Drawing line from (%.2f, %.2f) to (%.2f, %.2f)\n", x1, y1, x2, y2);
+	}
+}
+
+void drawLine(int angle) {
+	float x2 = (HEIGHT - HEIGHT * 0.12) * cos(angle * PI / 180);
+	float y2 = -(HEIGHT - HEIGHT * 0.12) * sin(angle * PI / 180);
+
+	printf("Drawing line...\n");
+	printf("Drawing line from (%d, %d) to (%.2f, %.2f)\n", WIDTH / 2, HEIGHT - HEIGHT * 0.074, WIDTH / 2 + x2, HEIGHT - HEIGHT * 0.074 - y2);
+}
+
+void drawText(int angle, int distance, char* noObject) {
+	printf("Drawing text...\n");
+	printf("Object: %s\n", noObject);
+	printf("Angle: %d degrees\n", angle);
+	printf("Distance: %d cm\n", distance);
+	// ... (code for drawing other text elements)
+}
+
+// Function for calculating the distance measured by the Ultrasonic sensor
+int calculateDistance(){
+	
+	digitalWrite(trigPin, LOW);
+	delayMicroseconds(2);
+	// Sets the trigPin on HIGH state for 10 micro seconds
+	digitalWrite(trigPin, HIGH);
+	delayMicroseconds(10);
+	digitalWrite(trigPin, LOW);
+	duration = pulseIn(echoPin, HIGH); // Reads the echoPin, returns the sound wave travel time in microseconds
+	distance= duration*0.034/2;
+	return distance;
+}
